@@ -9,21 +9,21 @@ contract Auction {
 	address private secondHighestBidder;
 	mapping(address => uint) private bids;
 
-    enum AuctionStatus { InActive, Active, Cancelled, Complete }
-	    AuctionStatus public auctionStatus;
+    enum AucStatus { Complete, Active, InActive, Cancelled }
+	    AucStatus public auctionStatus;
 
 	constructor() {
 		owner = msg.sender;
-		auctionStatus = AuctionStatus.InActive;
+		auctionStatus = AucStatus.InActive;
 	}
 
 	modifier onlyOwner {
-		require(owner == msg.sender, "Ownable: caller is not the owner");
+		require(owner == msg.sender, "sender is not owner");
         _;
 	}
 
 	function auctionWinner() external view returns (address) {
-		require(auctionStatus == AuctionStatus.Complete, "Auction is not complete");
+		require(auctionStatus == AucStatus.Complete, "auction not completed");
 		return highestBidder;
 	}
 
@@ -49,7 +49,7 @@ contract Auction {
 
     function withdrawBid() external {
         //check the highestBidder and calculate highestBindingBid that is 1eth more than the secondHigherBidder
-		if (auctionStatus == AuctionStatus.Complete && msg.sender == highestBidder) {
+		if (auctionStatus == AucStatus.Complete && msg.sender == highestBidder) {
 			uint highestBindingBid = bids[secondHighestBidder] + 1;
 			uint refundedAmount = bids[msg.sender] - highestBindingBid;
             //transfer the remaining amount back to the highest bidder 
@@ -62,7 +62,7 @@ contract Auction {
 
     function startAuction(uint endTime_) external onlyOwner {
         //owner starts the auction
-		auctionStatus = AuctionStatus.Active;
+		auctionStatus = AucStatus.Active;
 		startTime = block.timestamp;
 		endTime = endTime_;
 	}
@@ -71,12 +71,12 @@ contract Auction {
         //highest binding bid goes to the owner
 		uint highestBindingBid = bids[secondHighestBidder] + 1;
         payable(msg.sender).transfer(highestBindingBid);
-		auctionStatus = AuctionStatus.Complete;
+		auctionStatus = AucStatus.Complete;
 	}
 
 	function cancelAuction() external onlyOwner {
-        require(auctionStatus == AuctionStatus.Active, "Auction is not active");
+        require(auctionStatus == AucStatus.Active, "auction not active");
         //auction is cancelled
-		auctionStatus = AuctionStatus.Cancelled;
+		auctionStatus = AucStatus.Cancelled;
 	}
 }
